@@ -54,17 +54,17 @@ class _TokenDeletionTestCase(unittest.TestCase):
 
     def test_negative_chunk_arg(self):
         errstring = "Only positive chunk size is allowed"
-        with self.assertRaisesRegexp(CommandError, errstring):
+        with self.assertRaisesRegex(CommandError, errstring):
             self.command.handle(self.command_name, chunk_size=-1000)
 
     def test_zero_chunk_arg(self):
         errstring = "Only positive chunk size is allowed"
-        with self.assertRaisesRegexp(CommandError, errstring):
+        with self.assertRaisesRegex(CommandError, errstring):
             self.command.handle(self.command_name, chunk_size=0)
 
     def test_negative_sleep_arg(self):
         errstring = "Only non-negative sleep between seconds is allowed"
-        with self.assertRaisesRegexp(CommandError, errstring):
+        with self.assertRaisesRegex(CommandError, errstring):
             self.command.handle(self.command_name, sleep_between=-5.5)
 
     def test_single_chunk_delete(self):
