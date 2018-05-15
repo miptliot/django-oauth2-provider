@@ -1,0 +1,66 @@
+{% load scope %}
+{% load url from future %}
+{% block content %}
+    {% if not error %}
+        <main>
+        <div class="base-block-outer">
+        <div class="base-block-inner">
+        <p class="info">Приложение «<span class="text-primary">{{ client.name }}</span>» запрашивает разрешение на предоставление данных и передачу результатов прохождения активности о пользователе у Университета НТИ «20.35»</p>
+        {% if client.get_text %}
+        <p>{{client.get_text}}</p>
+        {% endif %}
+        </div>
+        </div>
+        <ul>
+            {% for permission in oauth_data.scope|scopes %}
+                <li>
+                    {% if permission == "read" %}
+                    Read your data
+                    {% else %}
+                    Write your data
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+        <form method="post" action="{% url "oauth2:authorize" %}">
+            {% csrf_token %}
+            {{ form.errors }}
+            {{ form.non_field_errors }}
+            <fieldset>
+                <div style="display: none;" />
+                    <select type="select" name="scope" multiple="multiple">
+                    {% for scope in oauth_data.scope|scopes %}
+                        <option value="{{ scope }}" selected="selected">{{ scope }}</option>
+                    {% endfor %}
+                    </select>
+                </div>
+                <input type="submit" class="btn btn-cancel login large danger" value="Отмена" />
+                <input type="submit" class="btn btn-primary login large primary" name="authorize" value="Разрешить" />
+            </fieldset>
+        </form>
+        </main>
+    {% else %}
+        {{ error }}
+        {{ error_description }}
+    {% endif %}
+{% endblock %}
+
+{% block css %}
+                <style>
+                        fieldset, form { border: none; padding: 0; text-align: center}
+            form .btn:not(:last-child) {margin-right: 15px;}
+                        main { margin: 20px auto; width: 70vw; }
+                        .base-block-inner:after,.base-block-outer:after,.base-block-inner:before,.base-block-outer:before{background:#e52127;border:#221f1f solid 1px;content:'';display:block;height:10px;position:absolute;width:10px;z-index:300}
+                        .base-block-inner:after{right:-6px;top:-6px}.base-block-inner:before{left:-6px;top:-6px}
+                        .base-block-inner p:last-child{margin-bottom:0}
+                        .base-block-outer{background:#f7f7f7;border:#221f1f solid 1px; margin-bottom: 25px;padding:24px 30px;position:relative;text-align: center;}
+                        .base-block-outer:after{bottom:-6px;right:-6px}.base-block-outer:before{bottom:-6px;left:-6px}
+                        .btn { border-radius: 3px; border-style: solid; border-width: 1px; cursor: pointer; font-size: 120%; padding: 7px 20px 8px 20px }
+                        .btn-cancel { background: #eee; border-color: #ddd; color: #222; }
+                        .btn-cancel:hover { background: #ddd; }
+                        .btn-primary { background: #e52127; border-color: #cc171d; color: #fff; }
+                        .btn-primary:hover { background: #cc171d }
+                        .info { font-size: 120%; margin-top: 0 }
+                        .text-primary { color: #e52127; }
+                </style>
+{% endblock %}
