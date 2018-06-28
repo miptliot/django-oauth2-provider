@@ -83,7 +83,16 @@ class Client(models.Model):
 
             # handle relations
             if val and field.remote_field:
-                val = deserialize_instance(field.remote_field.to, val)
+                if name == 'user':
+                    if val and val.get('id', 0) > 0:
+                        try:
+                            val = field.related_model.objects.get(id=val.get('id'))
+                        except field.related_model.DoesNotExist:
+                            val = None
+                    else:
+                        val = None
+                else:
+                    val = deserialize_instance(field.remote_field.to, val)
 
             kwargs[name] = val
 
