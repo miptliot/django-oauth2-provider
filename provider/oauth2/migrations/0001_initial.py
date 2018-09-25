@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from django.db import models, migrations
 import provider.utils
@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
                 ('client_id', models.CharField(default=provider.utils.short_token, max_length=255)),
                 ('client_secret', models.CharField(default=provider.utils.long_token, max_length=255)),
                 ('client_type', models.IntegerField(choices=[(0, 'Confidential (Web applications)'), (1, 'Public (Native and JS applications)')])),
-                ('user', models.ForeignKey(related_name='oauth2_client', blank=True, to=settings.AUTH_USER_MODEL, null=True)),
+                ('user', models.ForeignKey(related_name='oauth2_client', blank=True, to=settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE)),
             ],
         ),
         migrations.CreateModel(
@@ -43,8 +43,8 @@ class Migration(migrations.Migration):
                 ('expires', models.DateTimeField(default=provider.utils.get_code_expiry)),
                 ('redirect_uri', models.CharField(max_length=255, blank=True)),
                 ('scope', models.IntegerField(default=0)),
-                ('client', models.ForeignKey(to='oauth2.Client')),
-                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
+                ('client', models.ForeignKey(to='oauth2.Client', on_delete=models.CASCADE)),
+                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
             ],
         ),
         migrations.CreateModel(
@@ -53,19 +53,19 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('token', models.CharField(default=provider.utils.long_token, max_length=255)),
                 ('expired', models.BooleanField(default=False)),
-                ('access_token', models.OneToOneField(related_name='refresh_token', to='oauth2.AccessToken')),
-                ('client', models.ForeignKey(to='oauth2.Client')),
-                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
+                ('access_token', models.OneToOneField(related_name='refresh_token', to='oauth2.AccessToken', on_delete=models.CASCADE)),
+                ('client', models.ForeignKey(to='oauth2.Client', on_delete=models.CASCADE)),
+                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
             ],
         ),
         migrations.AddField(
             model_name='accesstoken',
             name='client',
-            field=models.ForeignKey(to='oauth2.Client'),
+            field=models.ForeignKey(to='oauth2.Client', on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='accesstoken',
             name='user',
-            field=models.ForeignKey(to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE),
         ),
     ]

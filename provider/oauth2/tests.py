@@ -1,5 +1,5 @@
 # encoding: utf-8
-from __future__ import unicode_literals
+
 
 import base64
 import datetime
@@ -11,7 +11,7 @@ from six.moves.urllib.parse import urlparse, parse_qs
 import ddt
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import QueryDict
 from django.test import TestCase, RequestFactory, override_settings
 from django.utils.html import escape
@@ -118,7 +118,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         self.client.get(self.auth_url(), data=self.get_auth_params(response_type='token', scope=requested_scope))
         response = self.client.post(self.auth_url2(), {'authorize': True})
         fragment = urlparse(response['Location']).fragment
-        auth_response_data = {k: v[0] for k, v in parse_qs(fragment).items()}
+        auth_response_data = {k: v[0] for k, v in list(parse_qs(fragment).items())}
         six.assertCountEqual(self, auth_response_data['scope'].split(' '), expected_scope.split(' '))
         self.assertEqual(auth_response_data['access_token'], AccessToken.objects.all()[0].token)
         self.assertEqual(auth_response_data['token_type'], 'Bearer')
@@ -274,7 +274,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
 
         self.assertEqual(400, response.status_code)
         self.assertTrue(escape("'invalid' is not a valid scope.").encode() in response.content,
-                        'Expected `{0}` in {1}'.format(escape(u"'invalid' is not a valid scope."), response.content))
+                        'Expected `{0}` in {1}'.format(escape("'invalid' is not a valid scope."), response.content))
 
         self.client.get(
             self.auth_url(),
@@ -641,10 +641,10 @@ class ClientCredentialsAccessTokenTests(BaseOAuth2TestCase):
             The access token should NOT have an associated refresh token.
         """
         expected = {
-            u'access_token': access_token.token,
-            u'token_type': constants.TOKEN_TYPE,
-            u'expires_in': access_token.get_expire_delta(),
-            u'scope': u' '.join(scope.names(access_token.scope)),
+            'access_token': access_token.token,
+            'token_type': constants.TOKEN_TYPE,
+            'expires_in': access_token.get_expire_delta(),
+            'scope': ' '.join(scope.names(access_token.scope)),
         }
 
         self.assertEqual(json.loads(response.content.decode()), expected)
@@ -847,7 +847,7 @@ class DeleteExpiredTest(BaseOAuth2TestCase):
             'client_id': self.get_client().client_id,
             'client_secret': self.get_client().client_secret,
             'code': code})
-        self.assertEquals(200, response.status_code)
+        self.assertEqual(200, response.status_code)
         token = json.loads(response.content.decode())
         self.assertTrue('access_token' in token)
         access_token = token['access_token']
@@ -870,9 +870,9 @@ class DeleteExpiredTest(BaseOAuth2TestCase):
         self.assertEqual(200, response.status_code)
         token = json.loads(response.content.decode())
         self.assertTrue('access_token' in token)
-        self.assertNotEquals(access_token, token['access_token'])
+        self.assertNotEqual(access_token, token['access_token'])
         self.assertTrue('refresh_token' in token)
-        self.assertNotEquals(refresh_token, token['refresh_token'])
+        self.assertNotEqual(refresh_token, token['refresh_token'])
 
         # make sure the orig AccessToken and RefreshToken are gone
         self.assertFalse(AccessToken.objects.filter(token=access_token).exists())

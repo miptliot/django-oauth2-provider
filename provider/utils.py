@@ -66,7 +66,7 @@ def serialize_instance(instance):
     Serialization will start complaining about missing relations et al.
     """
     ret = dict([(k, v)
-                for k, v in instance.__dict__.items()
+                for k, v in list(instance.__dict__.items())
                 if not k.startswith('_')]) if instance else None
     return json.loads(json.dumps(ret, cls=DjangoJSONEncoder))
 
@@ -74,7 +74,7 @@ def serialize_instance(instance):
 def deserialize_instance(model, data={}):
     "Translate raw data into a model instance."
     ret = model()
-    for k, v in data.items():
+    for k, v in list(data.items()):
         if v is not None:
             try:
                 f = model._meta.get_field(k)
