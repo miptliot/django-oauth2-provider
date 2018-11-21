@@ -1,17 +1,18 @@
 #!/usr/bin/env python
 
 from setuptools import setup, find_packages
+
 import provider
 
 setup(
-    name='django-oauth2-provider',
+    name='edx-django-oauth2-provider',
     version=provider.__version__,
-    description='Provide OAuth2 access to your app',
+    description='edX fork of django-oauth2-provider',
     long_description=open('README.rst').read(),
-    author='Alen Mujezinovic',
-    author_email='alen@caffeinehit.com',
-    url = 'https://github.com/caffeinehit/django-oauth2-provider',
-    packages= find_packages(exclude=('tests*',)),
+    author='edX',
+    author_email='oscm@edx.org',
+    url='https://github.com/edx/django-oauth2-provider',
+    packages=find_packages(exclude=('tests*',)),
     classifiers=[
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
@@ -19,10 +20,13 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Framework :: Django',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
-    install_requires=[
-        "shortuuid==0.3"
-    ],
+    install_requires=['shortuuid>=0.4.3,<1.0.0', 'Django>=2.0.1'],
     include_package_data=True,
     zip_safe=False,
 )

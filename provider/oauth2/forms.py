@@ -1,19 +1,21 @@
 from django import forms
 from django.contrib.auth import authenticate
-from django.utils.encoding import smart_unicode
+from django.utils.encoding import smart_text
 from django.utils.translation import ugettext as _
-from .. import scope
-from ..constants import RESPONSE_TYPE_CHOICES, SCOPES
-from ..forms import OAuthForm, OAuthValidationError
-from ..scope import SCOPE_NAMES
-from ..utils import now
-from .models import Client, Grant, RefreshToken
+
+from provider import scope
+from provider.constants import RESPONSE_TYPE_CHOICES, SCOPES
+from provider.forms import OAuthForm, OAuthValidationError
+from provider.oauth2.models import Client, Grant, RefreshToken
+from provider.scope import SCOPE_NAMES
+from provider.utils import now
 
 
 class ClientForm(forms.ModelForm):
     """
     Form to create new consumers.
     """
+
     class Meta:
         model = Client
         fields = ('name', 'url', 'redirect_uri', 'client_type')
@@ -36,10 +38,10 @@ class ClientAuthForm(forms.Form):
         data = self.cleaned_data
         try:
             client = Client.objects.get(client_id=data.get('client_id'),
-                client_secret=data.get('client_secret'))
+                                        client_secret=data.get('client_secret'))
         except Client.DoesNotExist:
             raise forms.ValidationError(_("Client could not be validated with "
-                "key pair."))
+                                          "key pair."))
 
         data['client'] = client
         return data
@@ -65,7 +67,7 @@ class ScopeChoiceField(forms.ChoiceField):
             value = value.split(' ')
 
         # Split values into list
-        return u' '.join([smart_unicode(val) for val in value]).split(u' ')
+        return ' '.join([smart_text(val) for val in value]).split(' ')
 
     def validate(self, value):
         """
@@ -80,13 +82,14 @@ class ScopeChoiceField(forms.ChoiceField):
                 raise OAuthValidationError({
                     'error': 'invalid_request',
                     'error_description': _("'%s' is not a valid scope.") % \
-                            val})
+                                         val})
 
 
 class ScopeMixin(object):
     """
     Form mixin to clean scope fields.
     """
+
     def clean_scope(self):
         """
         The scope is assembled by combining all the set flags into a single
@@ -135,6 +138,9 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
     The scope that the authorization should include.
     """
 
+    # Nonce passed back to OpenID Connect ID tokens to avoid replay attacks
+    nonce = forms.CharField(required=False)
+
     def clean_response_type(self):
         """
         :rfc:`3.1.1` Lists of values are space delimited.
@@ -143,7 +149,7 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
 
         if not response_type:
             raise OAuthValidationError({'error': 'invalid_request',
-                'error_description': "No 'response_type' supplied."})
+                                        'error_description': "No 'response_type' supplied."})
 
         types = response_type.split(" ")
 
@@ -151,8 +157,8 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
             if type not in RESPONSE_TYPE_CHOICES:
                 raise OAuthValidationError({
                     'error': 'unsupported_response_type',
-                    'error_description': u"'%s' is not a supported response "
-                        "type." % type})
+                    'error_description': "'%s' is not a supported response "
+                                         "type." % type})
 
         return response_type
 
@@ -168,7 +174,7 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
                 raise OAuthValidationError({
                     'error': 'invalid_request',
                     'error_description': _("The requested redirect didn't "
-                        "match the client settings.")})
+                                           "match the client settings.")})
 
         return redirect_uri
 
@@ -179,6 +185,7 @@ class AuthorizationForm(ScopeMixin, OAuthForm):
     """
     authorize = forms.BooleanField(required=False)
     scope = ScopeChoiceField(choices=SCOPE_NAMES, required=False)
+    nonce = forms.CharField(required=False)
 
     def save(self, **kwargs):
         authorize = self.cleaned_data.get('authorize')
@@ -188,6 +195,7 @@ class AuthorizationForm(ScopeMixin, OAuthForm):
 
         grant = Grant()
         grant.scope = self.cleaned_data.get('scope')
+        grant.nonce = self.cleaned_data.get('nonce')
         return grant
 
 
@@ -206,7 +214,7 @@ class RefreshTokenGrantForm(ScopeMixin, OAuthForm):
 
         try:
             token = RefreshToken.objects.get(token=token,
-                expired=False, client=self.client)
+                                             expired=False, client=self.client)
         except RefreshToken.DoesNotExist:
             raise OAuthValidationError({'error': 'invalid_grant'})
 
@@ -299,7 +307,7 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
         data = self.cleaned_data
 
         user = authenticate(username=data.get('username'),
-            password=data.get('password'))
+                            password=data.get('password'))
 
         if user is None:
             raise OAuthValidationError({'error': 'invalid_grant'})
@@ -328,8 +336,24 @@ class PublicPasswordGrantForm(PasswordGrantForm):
         except Client.DoesNotExist:
             raise OAuthValidationError({'error': 'invalid_client'})
 
-        if client.client_type != 1: # public
+        if client.client_type != 1:  # public
             raise OAuthValidationError({'error': 'invalid_client'})
 
         data['client'] = client
         return data
+
+
+class ClientCredentialsGrantForm(ScopeMixin, OAuthForm):
+    """ Validate a client credentials grant request. """
+    scope = forms.CharField(required=False)
+
+    def clean_scope(self):
+        # NOTE (CCB): This is a horrible hack, like much of our OAuth work. The scopes are declared in
+        # edx-oauth2-provider. (See edx_oauth2_provider/constants.py.) However, we need to provide a default scope
+        # that (a) gives the token basic read access and (b) allows access to the user info endpoint. This value
+        # represents the following scopes: openid (1), profile (2), email (4), permissions (32). At present, this is
+        # all scopes except course_staff and course_instructor. These scopes are normally associated with actual
+        # users, whereas the client credentials grant will primarily be used by service users.
+        #
+        # In the future, we should limit the allowable scopes either at a global or per-client level.
+        return 39
