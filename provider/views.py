@@ -252,7 +252,7 @@ class Authorize(OAuthView, Mixin, AccessTokenMixin):
     user with a modified redirect URL to the callback including the error
     and possibly description of the error as defined in :rfc:`4.1.2.1`.
     """
-    template_name = 'provider/authorize.html'
+    template_name = 'provider/authorize_unti.html'
 
     def get_redirect_url(self, request):
         """
