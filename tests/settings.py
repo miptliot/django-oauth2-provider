@@ -2,7 +2,6 @@
 import os
 
 DEBUG = True
-TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
     ('Tester', 'test@example.com'),
@@ -21,6 +20,7 @@ DATABASES = {
     }
 }
 
+PASSWORD_HASHERS = ['django.contrib.auth.hashers.SHA1PasswordHasher']
 
 SITE_ID = 1
 
@@ -48,7 +48,7 @@ SECRET_KEY = 'secret'
 
 ROOT_URLCONF = 'tests.urls'
 
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -58,5 +58,27 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'provider',
     'provider.oauth2',
-)
+    'django_nose',
+]
 
+# When we drop support for Django 1.8 we can remove MIDDLEWARE_CLASSES
+MIDDLEWARE_CLASSES = MIDDLEWARE = [
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+]
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'debug': DEBUG,
+            'context_processors': (
+                'django.contrib.auth.context_processors.auth',
+            )
+        }
+    },
+]
+
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
