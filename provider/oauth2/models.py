@@ -99,7 +99,7 @@ class Client(models.Model):
         return cls(**kwargs)
 
     def get_text(self):
-        from apps.profiler.models import TextClient
+        from apps.context_backends.unti.models import TextClient
         txt = TextClient.objects.filter(client=self).first()
         if txt:
            return txt.text
